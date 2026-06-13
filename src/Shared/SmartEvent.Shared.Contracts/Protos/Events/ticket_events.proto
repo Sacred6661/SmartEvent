@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package smartevent.events;
+
+option csharp_namespace = "SmartEvent.Shared.Contracts.Events";
+
+message TicketPurchasedEvent {
+  string ticket_id = 1;
+  string event_id = 2;
+  string user_id = 3;
+  double price = 4;
+  string purchase_date = 5;
+}
+
+message TicketCancelledEvent {
+  string ticket_id = 1;
+  string event_id = 2;
+  string user_id = 3;
+  string cancellation_date = 4;
+}

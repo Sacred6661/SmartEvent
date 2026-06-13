@@ -1,0 +1,13 @@
+<Solution>
+  <Project Path="src/ApiGateways/YarpApiGateway/YarpApiGateway.csproj" Id="4e8adbec-2fce-474b-b9c7-340e4f3407b7" />
+  <Project Path="src/AzureFunctions/PaymentProcessor/PaymentProcessor.csproj" Id="fc3df719-d496-46a4-96e8-072c24fdff1e" />
+  <Project Path="src/Services/AiRecommendationService/AiRecommendationService.csproj" Id="3a066d35-1c6f-4b9f-89e8-dd3bf5b5dd89" />
+  <Project Path="src/Services/ChatService/ChatService.csproj" Id="533e301d-71de-485b-8707-04f241cb412e" />
+  <Project Path="src/Services/EventService/EventService.csproj" Id="c7a270ae-8ff8-473f-a515-2fedf01c7871" />
+  <Project Path="src/Services/IdentityService/IdentityService.csproj" Id="7daf9dcf-115b-45f6-89bd-f91f4d724174" />
+  <Project Path="src/Services/NotificationService/NotificationService.csproj" Id="8d69bf19-8b91-4b10-bcca-d2fc6a087ca6" />
+  <Project Path="src/Services/TicketService/TicketService.csproj" Id="d19e8353-0a52-497e-9fbe-7133e5b360c3" />
+  <Project Path="src/Shared/SmartEvent.Shared.Abstractions/SmartEvent.Shared.Abstractions.csproj" Id="774bf6f6-172d-4eb2-9720-02a4a2c3cf2b" />
+  <Project Path="src/Shared/SmartEvent.Shared.Contracts/SmartEvent.Shared.Contracts.csproj" Id="7b88d0ef-6526-4c43-95f0-c90f63ab258e" />
+  <Project Path="src/Shared/SmartEvent.Shared.Logging/SmartEvent.Shared.Logging.csproj" Id="f393d8f3-3e1b-4433-8cd6-2db2e39a4607" />
+</Solution>

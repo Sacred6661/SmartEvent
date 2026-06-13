@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package smartevent.events;
+
+option csharp_namespace = "SmartEvent.Shared.Contracts.Events";
+
+message UserCreatedEvent {
+  string user_id = 1;
+  string email = 2;
+  string first_name = 3;
+  string last_name = 4;
+  string created_at = 5;
+}

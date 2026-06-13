@@ -1,0 +1,6 @@
+@AiRecommendationService_HostAddress = http://localhost:5100
+
+GET {{AiRecommendationService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

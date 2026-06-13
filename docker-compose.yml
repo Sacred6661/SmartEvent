@@ -1,0 +1,162 @@
+version: '3.8'
+
+services:
+  # ==================== PostgreSQL Databases ====================
+  identity-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: IdentityDb
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+    ports:
+      - "5432:5432"
+    volumes:
+      - identity-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d IdentityDb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  event-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: EventDb
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+    ports:
+      - "5433:5432"
+    volumes:
+      - event-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d EventDb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  ticket-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: TicketDb
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+    ports:
+      - "5434:5432"
+    volumes:
+      - ticket-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d TicketDb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ==================== PG Admin ====================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@smartevent.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    depends_on:
+      - identity-db
+      - event-db
+      - ticket-db
+
+  # ==================== MongoDB (for Cosmos DB Emulation) ====================
+  mongo-notification:
+    image: mongo:7
+    environment:
+      MONGO_INITDB_DATABASE: NotificationDb
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-notification-data:/data/db
+
+  mongo-chat:
+    image: mongo:7
+    environment:
+      MONGO_INITDB_DATABASE: ChatDb
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo-chat-data:/data/db
+
+  # ==================== Azurite (Azure Blob Storage Emulator) ====================
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:latest
+    command: "azurite --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0"
+    ports:
+      - "10000:10000"  # Blob storage
+      - "10001:10001"  # Queue storage
+      - "10002:10002"  # Table storage
+    volumes:
+      - azurite-data:/data
+
+  # ==================== Redis ====================
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes --requirepass redis123
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  # ==================== RabbitMQ ====================
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"   # AMQP
+      - "15672:15672" # Management UI
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ==================== Ollama (Local AI) ====================
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    entrypoint: ["/bin/sh", "-c", "ollama serve & sleep 5 && ollama pull phi3:mini && wait"]
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+
+  # ==================== Seq (Structured Logs) ====================
+  seq:
+    image: datalust/seq:latest
+    environment:
+        ACCEPT_EULA: Y
+        SEQ_FIRSTRUN_ADMINPASSWORD: Admin123!
+    ports:
+        - "5341:5341"   # Ingestion
+        - "8080:80"     # UI
+    volumes:
+        - seq-data:/data
+
+volumes:
+  identity-db-data:
+  event-db-data:
+  ticket-db-data:
+  pgadmin-data:
+  mongo-notification-data:
+  mongo-chat-data:
+  azurite-data:
+  redis-data:
+  rabbitmq-data:
+  ollama-data:
+  seq-data:
