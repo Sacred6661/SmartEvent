@@ -16,7 +16,9 @@ namespace IdentityService.Data
         {
             base.OnModelCreating(builder);
 
-            // custom settings
+            // OpenIddict settings
+            builder.UseOpenIddict();
+
             builder.Entity<ApplicationUser>(entity =>
             {
                 entity.HasIndex(u => u.GoogleId).IsUnique();

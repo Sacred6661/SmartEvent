@@ -1,19 +1,36 @@
 using FluentValidation;
 using IdentityService.Data;
+using IdentityService.Middleware;
 using IdentityService.Models;
 using IdentityService.Services;
 using IdentityService.Services.Interfaces;
-using IdentityService.Validators;
 using Mapster;
 using MapsterMapper;
 using MassTransit;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Serilog;
+using SmartEvent.Shared.Abstractions.Extensions;
 using SmartEvent.Shared.Logging.Extensions;
 using System.Reflection;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var frontendUrl = builder.Configuration["FrontendUrl"] ?? "";
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins(frontendUrl)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
 
 // Serilog adding
 builder.Host.UseSerilog((context, services, configuration) =>
@@ -46,8 +63,46 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
     .AddEntityFrameworkStores<IdentityDbContext>()
     .AddDefaultTokenProviders();
 
-// Google Authentication settings
-builder.Services.AddAuthentication()
+// JWT Authentication
+var jwtSettings = builder.Configuration.GetSection("Jwt");
+var key = Encoding.UTF8.GetBytes(jwtSettings["Secret"]!);
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings["Issuer"],
+            ValidAudience = jwtSettings["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(key)
+        };
+
+        // Add a handler to read the token from cookies
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                // Reading the token from the “accessToken” cookie
+                var accessToken = context.Request.Cookies["accessToken"];
+
+                // If the token is in the cookies, set it
+                if (!string.IsNullOrEmpty(accessToken))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            }
+        };
+    })
     .AddGoogle(options =>
     {
         options.ClientId = builder.Configuration["Authentication:Google:ClientId"]!;
@@ -87,16 +142,19 @@ builder.Services.AddMassTransit(x =>
     });
 });
 
+builder.Services.AddHttpContextAccessor();
+
 // service registration
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
 
 var app = builder.Build();
 
 // automatic migrations
-using (var scope = app.Services.CreateScope())
+if (app.Environment.IsDevelopment())
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
-    await dbContext.Database.MigrateAsync();
+    await DbInitializerExtensions.DropDatabasesAsync<IdentityDbContext>(app.Services);
+    await DbInitializerExtensions.InitDbAsync<IdentityDbContext>(app.Services);
 }
 
 // Middleware
@@ -106,7 +164,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseHttpsRedirection();
+
+app.UseCors("AllowFrontend");
+
 app.UseSerilogRequestLogging();
+
+app.UseMiddleware<TokenRefreshMiddleware>();
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

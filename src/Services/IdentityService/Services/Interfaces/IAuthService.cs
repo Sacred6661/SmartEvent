@@ -8,5 +8,6 @@ namespace IdentityService.Services.Interfaces
         Task<AuthResponse> LoginAsync(LoginRequest request);
         Task<AuthResponse> GoogleLoginAsync();
         Task<UserInfo?> GetUserByIdAsync(Guid userId);
+        Task<UserInfo?> GetCurrentUserAsync();
     }
 }
