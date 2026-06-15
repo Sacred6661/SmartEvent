@@ -1,6 +1,5 @@
 using FluentValidation;
 using IdentityService.Data;
-using IdentityService.Middleware;
 using IdentityService.Models;
 using IdentityService.Services;
 using IdentityService.Services.Interfaces;
@@ -33,12 +32,7 @@ builder.Services.AddCors(options =>
 });
 
 // Serilog adding
-builder.Host.UseSerilog((context, services, configuration) =>
-{
-    configuration
-        .ReadFrom.Configuration(context.Configuration)
-        .Enrich.WithProperty("ServiceName", "IdentityService");
-});
+builder.AddSmartEventLogging("IdentityService");
 
 // controllers adding
 builder.Services.AddControllers();
@@ -150,6 +144,8 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 
 var app = builder.Build();
 
+app.UseSmartEventLogging();
+
 // automatic migrations
 if (app.Environment.IsDevelopment())
 {
@@ -167,10 +163,6 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseCors("AllowFrontend");
-
-app.UseSerilogRequestLogging();
-
-app.UseMiddleware<TokenRefreshMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();

@@ -141,6 +141,7 @@ services:
     image: datalust/seq:latest
     environment:
         ACCEPT_EULA: Y
+        SEQ_RETENTION_DAYS: 3
         SEQ_FIRSTRUN_ADMINPASSWORD: Admin123!
     ports:
         - "5341:5341"   # Ingestion
